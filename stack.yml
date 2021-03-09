@@ -3,7 +3,7 @@ version: '3.1'
 services:
 
   sshtarpit:
-    image: andreaskasper/ssh-trapit
+    image: andreaskasper/ssh-tarpit
     restart: always
     ports:
       - 2222:2222
