@@ -1,5 +1,5 @@
 # SSH TARPIT
-A simple python script to make your server a little bit safer.
+A simple python script to make your server a little bit safer. It created a fake SSH Server which answers very very very sloooooowwww. It keeps SSH clients locked up for hours or even days at a time. The purpose is to put your real SSH server on another port and then let the script kiddies get stuck in this tarpit instead of bothering a real server.
 
 ### Features
 - [x] Creates a simple tarpit for your SSH Port
@@ -22,6 +22,13 @@ A simple python script to make your server a little bit safer.
 ```sh
 $ docker run -p 22:2222 andreaskasper/ssh-tarpit
 ```
+
+#### Getting help
+
+```sh
+$ docker run andreaskasper/ssh-tarpit --help
+```
+
 
 ### Steps
 - [x] Build a base test image to test this build process (Travis/Docker)
