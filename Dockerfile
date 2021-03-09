@@ -6,6 +6,9 @@ EXPOSE 2222
 
 WORKDIR /app
 
+ADD entrypoint.sh /entrypoint.sh
+
 RUN pip3 install ssh-tarpit
 
-CMD ["ssh-tarpit"]
+ENTRYPOINT ["/bin/bash","/entrypoint.sh"]
+
