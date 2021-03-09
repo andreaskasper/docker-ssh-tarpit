@@ -32,6 +32,12 @@ $ docker run -p 22:2222 andreaskasper/ssh-tarpit
 $ docker run andreaskasper/ssh-tarpit --help
 ```
 
+### Environment Parameters
+| Parameter     | Default       | Description   |
+| ------------- |:-------------:|:------------- |
+| BIND_ADDRESS  | 0.0.0.0       | The IP address the script binds to - normally you don't need to change this                   |
+| BIND_PORT     | 2222          | The port the scripts connects to - normally you don't need to change this                     |
+| VERBOSE       | info          | Values: debug,info,warn,error,fatal - prints it to STDOUT so you can read it with docker logs |
 
 ### Steps
 - [x] Build a base test image to test this build process (Travis/Docker)
