@@ -22,3 +22,13 @@ A simple python script to make your server a little bit safer.
 ```sh
 $ docker run -p 22:2222 andreaskasper/ssh-tarpit
 ```
+
+### Steps
+- [x] Build a base test image to test this build process (Travis/Docker)
+- [ ] Build tests
+- [ ] Gnomes
+- [ ] Profit
+
+### support the projects :hammer_and_wrench:
+* [![donate via Patreon](https://img.shields.io/badge/Donate-Patreon-green.svg)](https://www.patreon.com/AndreasKasper)
+* [![donate via PayPal](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.me/AndreasKasper)
