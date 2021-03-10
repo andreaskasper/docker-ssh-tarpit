@@ -10,7 +10,7 @@ A simple python script to make your server a little bit safer. It created a fake
 ![Build Status](https://img.shields.io/docker/image-size/andreaskasper/ssh-tarpit/latest)
 
 ### Bugs & Issues:
-![Github Issues](https://img.shields.io/github/issues/andreaskasper/docker-ssh-tarpit.svg)
+[![Github Issues](https://img.shields.io/github/issues/andreaskasper/docker-ssh-tarpit.svg)](https://github.com/andreaskasper/docker-ssh-tarpit/issues)
 ![Code Languages](https://img.shields.io/github/languages/top/andreaskasper/docker-ssh-tarpit.svg)
 
 ### Stats:
