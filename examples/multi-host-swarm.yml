@@ -1,0 +1,56 @@
+# Example: Deploy SSH Tarpit across multiple Docker Swarm nodes
+# This protects all nodes in your cluster
+
+version: '3.8'
+
+services:
+  ssh-tarpit:
+    image: andreaskasper/ssh-tarpit:latest
+    
+    # Deploy to all nodes in the swarm
+    deploy:
+      mode: global  # One instance per node
+      
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 64M
+      
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      
+      # Optional: Only deploy to worker nodes
+      placement:
+        constraints:
+          - node.role == worker
+    
+    ports:
+      - target: 22
+        published: 22
+        protocol: tcp
+        mode: host  # Each node exposes its own port
+    
+    environment:
+      - BIND_ADDRESS=0.0.0.0
+      - BIND_PORT=22
+      - VERBOSE=info
+      - MAX_CLIENTS=2048
+    
+    networks:
+      - tarpit_network
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  tarpit_network:
+    driver: overlay

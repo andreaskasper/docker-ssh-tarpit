@@ -1,0 +1,56 @@
+# Systemd service file for running SSH Tarpit as a system service
+# Save this as /etc/systemd/system/ssh-tarpit.service
+
+[Unit]
+Description=SSH Tarpit - Honeypot for SSH attacks
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+
+# Pull latest image before starting
+ExecStartPre=-/usr/bin/docker pull andreaskasper/ssh-tarpit:latest
+ExecStartPre=-/usr/bin/docker stop ssh-tarpit
+ExecStartPre=-/usr/bin/docker rm ssh-tarpit
+
+# Start the container
+ExecStart=/usr/bin/docker run \
+  --name ssh-tarpit \
+  --restart unless-stopped \
+  -p 22:22 \
+  -e BIND_ADDRESS=0.0.0.0 \
+  -e BIND_PORT=22 \
+  -e VERBOSE=info \
+  -e MAX_CLIENTS=4096 \
+  --security-opt no-new-privileges:true \
+  --cap-drop ALL \
+  --read-only \
+  --memory=512m \
+  --cpus=2.0 \
+  andreaskasper/ssh-tarpit:latest
+
+# Stop the container
+ExecStop=/usr/bin/docker stop ssh-tarpit
+ExecStopPost=/usr/bin/docker rm ssh-tarpit
+
+# Restart policy
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target
+
+# Installation instructions:
+# 1. Save this file as /etc/systemd/system/ssh-tarpit.service
+# 2. Reload systemd: sudo systemctl daemon-reload
+# 3. Enable on boot: sudo systemctl enable ssh-tarpit
+# 4. Start service: sudo systemctl start ssh-tarpit
+# 5. Check status: sudo systemctl status ssh-tarpit
+# 6. View logs: sudo journalctl -u ssh-tarpit -f
+
+# IMPORTANT: Move your real SSH to another port first!
+# Edit /etc/ssh/sshd_config:
+#   Port 2222
+# Then: sudo systemctl restart sshd
