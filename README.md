@@ -32,11 +32,8 @@ This tarpit creates a fake SSH server that responds **extremely slowly** to conn
 ### Using Docker
 
 ```bash
-# Run on port 22 (make sure your real SSH is on a different port!)
+# Run on port 22 (make sure your real SSH is on a different port first!)
 docker run -d -p 22:22 --name ssh-tarpit andreaskasper/ssh-tarpit
-
-# Or use a custom port
-docker run -d -p 2222:22 --name ssh-tarpit andreaskasper/ssh-tarpit
 ```
 
 ### Using Docker Compose
@@ -82,14 +79,22 @@ docker run -p 22:22 andreaskasper/ssh-tarpit \
 
 ## 🔒 Security Best Practices
 
-### 1. Move Your Real SSH Server
+### 1. Move Your Real SSH Server First!
+
+**CRITICAL: Do this BEFORE deploying the tarpit!**
 
 ```bash
 # Edit /etc/ssh/sshd_config
-Port 2222  # Or any non-standard port
+sudo nano /etc/ssh/sshd_config
+
+# Change the port line to:
+Port 2222  # Or any non-standard port (e.g., 2200, 22000)
 
 # Restart SSH
 sudo systemctl restart sshd
+
+# Test the new port (open a NEW terminal, don't close the current one!)
+ssh -p 2222 user@your-server
 ```
 
 ### 2. Deploy the Tarpit on Port 22
@@ -107,9 +112,13 @@ docker run -d \
 ```bash
 # Allow your real SSH only from specific IPs
 sudo ufw allow from 192.168.1.0/24 to any port 2222
+sudo ufw allow from YOUR_HOME_IP to any port 2222
 
 # Allow tarpit from everywhere
 sudo ufw allow 22/tcp
+
+# Enable firewall
+sudo ufw enable
 ```
 
 ## 🎛️ Advanced Deployments
@@ -146,6 +155,8 @@ networks:
 services:
   ssh-tarpit:
     image: andreaskasper/ssh-tarpit:latest
+    ports:
+      - "22:22"
     deploy:
       resources:
         limits:
@@ -180,6 +191,9 @@ docker logs ssh-tarpit --tail 100 | grep "Connection"
 # Top attacking IPs
 docker logs ssh-tarpit | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' | \
   sort | uniq -c | sort -rn | head -20
+
+# Hourly attack statistics
+docker logs ssh-tarpit --since 1h | grep -c "Connection"
 ```
 
 ## 🐛 Troubleshooting
@@ -189,8 +203,10 @@ docker logs ssh-tarpit | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' | \
 ```bash
 # Find what's using port 22
 sudo lsof -i :22
+# or
+sudo netstat -tlnp | grep :22
 
-# Kill the process or move SSH to another port
+# If it's SSH, move it to another port first (see Security Best Practices)
 ```
 
 ### Container won't start
@@ -199,8 +215,8 @@ sudo lsof -i :22
 # Check logs
 docker logs ssh-tarpit
 
-# Run in interactive mode
-docker run -it -p 22:22 andreaskasper/ssh-tarpit sh
+# Run in interactive mode for debugging
+docker run -it --rm -p 22:22 andreaskasper/ssh-tarpit sh
 ```
 
 ### Permission denied
@@ -208,6 +224,19 @@ docker run -it -p 22:22 andreaskasper/ssh-tarpit sh
 ```bash
 # Ports < 1024 require privileged access on some systems
 docker run -d -p 22:22 --cap-add=NET_BIND_SERVICE andreaskasper/ssh-tarpit
+```
+
+### Can't SSH to real server after deployment
+
+```bash
+# Make sure you can still access your real SSH port
+ssh -p 2222 user@your-server
+
+# Check if SSH is listening on the new port
+sudo netstat -tlnp | grep sshd
+
+# If needed, temporarily stop the tarpit
+docker stop ssh-tarpit
 ```
 
 ## 🏗️ Building from Source
@@ -240,6 +269,8 @@ MIT License - feel free to use this in your projects!
 ## ⚠️ Disclaimer
 
 This is a defensive security tool. Use it responsibly and only on systems you own or have permission to protect. The maintainers are not responsible for any misuse.
+
+**Always ensure you have alternative access to your server before deploying the tarpit on port 22!**
 
 ---
 
