@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  ssh-tarpit:
+    image: andreaskasper/ssh-tarpit:latest
+    container_name: ssh-tarpit
+    restart: unless-stopped
+    
+    ports:
+      - "22:22"  # Expose on port 22 (requires real SSH on different port)
+    
+    environment:
+      - BIND_ADDRESS=0.0.0.0
+      - BIND_PORT=22
+      - VERBOSE=info
+      - MAX_CLIENTS=4096
+    
+    # Resource limits to prevent DoS on the tarpit itself
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 128M
+    
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    cap_drop:
+      - ALL
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "22"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+# Example: Traefik integration
+# Uncomment and adjust labels for Traefik reverse proxy
+#    labels:
+#      - "traefik.enable=false"  # SSH doesn't go through HTTP proxy
+
+# For logging/monitoring, you can add a sidecar:
+#  tarpit-stats:
+#    image: alpine:latest
+#    command: sh -c "while true; do docker logs ssh-tarpit --tail 100 | grep -E 'Connection|attempt' | tail -20; sleep 60; done"
+#    depends_on:
+#      - ssh-tarpit

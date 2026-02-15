@@ -1,50 +1,246 @@
-# SSH TARPIT
-A simple python script to make your server a little bit safer. It created a fake SSH Server which answers very very very sloooooowwww. It keeps SSH clients locked up for hours or even days at a time. The purpose is to put your real SSH server on another port and then let the script kiddies get stuck in this tarpit instead of bothering a real server.
+# SSH TARPIT 🪤
 
-### Features
-- [x] Creates a simple tarpit for your SSH Port
+A lightweight, secure SSH honeypot that keeps attackers locked up for hours. Built with Docker for easy deployment.
 
-### Build status:
-[![Build Status](https://img.shields.io/docker/cloud/automated/andreaskasper/ssh-tarpit.svg)](https://hub.docker.com/r/andreaskasper/ssh-tarpit)
-[![Build Status](https://img.shields.io/docker/cloud/build/andreaskasper/ssh-tarpit.svg)](https://hub.docker.com/r/andreaskasper/ssh-tarpit)
-![Build Status](https://img.shields.io/docker/image-size/andreaskasper/ssh-tarpit/latest)
+## 🎯 Purpose
 
-### Bugs & Issues:
-[![Github Issues](https://img.shields.io/github/issues/andreaskasper/docker-ssh-tarpit.svg)](https://github.com/andreaskasper/docker-ssh-tarpit/issues)
-![Code Languages](https://img.shields.io/github/languages/top/andreaskasper/docker-ssh-tarpit.svg)
+This tarpit creates a fake SSH server that responds **extremely slowly** to connection attempts. It's designed to:
+- Waste attackers' time and resources
+- Protect your real SSH server (which should be on a different port)
+- Log and monitor brute force attempts
+- Reduce server load from automated attacks
 
-### Stats:
+## ✨ Features
+
+- ✅ **Tiny footprint** - Alpine-based image (~50MB vs ~900MB)
+- ✅ **Multi-architecture** - Supports amd64, arm64, arm/v7
+- ✅ **Secure by default** - Runs as non-root user
+- ✅ **Resource limits** - Prevents DoS on the tarpit itself
+- ✅ **Automated builds** - GitHub Actions with security scanning
+- ✅ **Health monitoring** - Built-in healthcheck
+- ✅ **Configurable** - Environment variables for all settings
+
+## 🏗️ Build Status
+
+[![Build Status](https://github.com/andreaskasper/docker-ssh-tarpit/actions/workflows/docker-build.yml/badge.svg)](https://github.com/andreaskasper/docker-ssh-tarpit/actions)
+[![Security Scan](https://github.com/andreaskasper/docker-ssh-tarpit/actions/workflows/security-scan.yml/badge.svg)](https://github.com/andreaskasper/docker-ssh-tarpit/actions)
 ![Docker Pulls](https://img.shields.io/docker/pulls/andreaskasper/ssh-tarpit.svg)
+![Docker Image Size](https://img.shields.io/docker/image-size/andreaskasper/ssh-tarpit/latest)
 
-### Demo:
-[![Play with docker](https://raw.githubusercontent.com/play-with-docker/stacks/cff22438cb4195ace27f9b15784bbb497047afa7/assets/images/button.png)](http://play-with-docker.com/?stack=https://raw.githubusercontent.com/andreaskasper/docker-ssh-tarpit/main/stack.yml)
+## 🚀 Quick Start
 
-### Running the container :
-#### Simple Run
+### Using Docker
 
-```sh
-$ docker run -p 22:2222 andreaskasper/ssh-tarpit
+```bash
+# Run on port 22 (make sure your real SSH is on a different port!)
+docker run -d -p 22:22 --name ssh-tarpit andreaskasper/ssh-tarpit
+
+# Or use a custom port
+docker run -d -p 2222:22 --name ssh-tarpit andreaskasper/ssh-tarpit
 ```
 
-#### Getting help
+### Using Docker Compose
 
-```sh
-$ docker run andreaskasper/ssh-tarpit --help
+```bash
+# Download and run
+wget https://raw.githubusercontent.com/andreaskasper/docker-ssh-tarpit/main/docker-compose.yml
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
 ```
 
-### Environment Parameters
-| Parameter     | Default       | Description   |
-| ------------- |:-------------:|:------------- |
-| BIND_ADDRESS  | 0.0.0.0       | The IP address the script binds to - normally you don't need to change this                   |
-| BIND_PORT     | 2222          | The port the scripts connects to - normally you don't need to change this                     |
-| VERBOSE       | info          | Values: debug,info,warn,error,fatal - prints it to STDOUT so you can read it with docker logs |
+### Using Docker Stack (Swarm)
 
-### Steps
-- [x] Build a base test image to test this build process (Travis/Docker)
-- [ ] Build tests
-- [ ] Gnomes
-- [ ] Profit
+```bash
+docker stack deploy -c stack.yml tarpit
+```
 
-### support the projects :hammer_and_wrench:
-* [![donate via Patreon](https://img.shields.io/badge/Donate-Patreon-green.svg)](https://www.patreon.com/AndreasKasper)
-* [![donate via PayPal](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.me/AndreasKasper)
+## ⚙️ Configuration
+
+### Environment Variables
+
+| Variable      | Default   | Description                                          |
+|---------------|-----------|------------------------------------------------------|
+| `BIND_ADDRESS`| 0.0.0.0   | IP address to bind to                                |
+| `BIND_PORT`   | 22        | Internal port (usually don't change)                 |
+| `VERBOSE`     | info      | Log level: `debug`, `info`, `warn`, `error`, `fatal` |
+| `MAX_CLIENTS` | 4096      | Maximum concurrent connections                       |
+
+### Custom Command
+
+```bash
+# Get help
+docker run andreaskasper/ssh-tarpit --help
+
+# Custom settings
+docker run -p 22:22 andreaskasper/ssh-tarpit \
+  --bind-address 0.0.0.0 \
+  --bind-port 22 \
+  --verbosity debug
+```
+
+## 🔒 Security Best Practices
+
+### 1. Move Your Real SSH Server
+
+```bash
+# Edit /etc/ssh/sshd_config
+Port 2222  # Or any non-standard port
+
+# Restart SSH
+sudo systemctl restart sshd
+```
+
+### 2. Deploy the Tarpit on Port 22
+
+```bash
+docker run -d \
+  --name ssh-tarpit \
+  --restart unless-stopped \
+  -p 22:22 \
+  andreaskasper/ssh-tarpit
+```
+
+### 3. Use Firewall Rules
+
+```bash
+# Allow your real SSH only from specific IPs
+sudo ufw allow from 192.168.1.0/24 to any port 2222
+
+# Allow tarpit from everywhere
+sudo ufw allow 22/tcp
+```
+
+## 🎛️ Advanced Deployments
+
+### With Traefik (for monitoring)
+
+```yaml
+version: '3.8'
+
+services:
+  ssh-tarpit:
+    image: andreaskasper/ssh-tarpit:latest
+    restart: unless-stopped
+    ports:
+      - "22:22"
+    networks:
+      - monitoring
+    labels:
+      - "traefik.enable=false"  # SSH doesn't use HTTP
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+networks:
+  monitoring:
+    external: true
+```
+
+### With Resource Limits
+
+```yaml
+services:
+  ssh-tarpit:
+    image: andreaskasper/ssh-tarpit:latest
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 128M
+```
+
+### Monitoring Trapped Connections
+
+```bash
+# Watch live connections
+docker logs -f ssh-tarpit
+
+# Count trapped IPs
+docker logs ssh-tarpit 2>&1 | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' | sort | uniq -c | sort -rn
+
+# Export logs for analysis
+docker logs ssh-tarpit > /var/log/ssh-tarpit.log
+```
+
+## 📊 Statistics
+
+View connection attempts:
+
+```bash
+# Show last 100 connection attempts
+docker logs ssh-tarpit --tail 100 | grep "Connection"
+
+# Top attacking IPs
+docker logs ssh-tarpit | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' | \
+  sort | uniq -c | sort -rn | head -20
+```
+
+## 🐛 Troubleshooting
+
+### Port already in use
+
+```bash
+# Find what's using port 22
+sudo lsof -i :22
+
+# Kill the process or move SSH to another port
+```
+
+### Container won't start
+
+```bash
+# Check logs
+docker logs ssh-tarpit
+
+# Run in interactive mode
+docker run -it -p 22:22 andreaskasper/ssh-tarpit sh
+```
+
+### Permission denied
+
+```bash
+# Ports < 1024 require privileged access on some systems
+docker run -d -p 22:22 --cap-add=NET_BIND_SERVICE andreaskasper/ssh-tarpit
+```
+
+## 🏗️ Building from Source
+
+```bash
+# Clone repository
+git clone https://github.com/andreaskasper/docker-ssh-tarpit.git
+cd docker-ssh-tarpit
+
+# Build image
+docker build -t ssh-tarpit:local .
+
+# Run your build
+docker run -d -p 22:22 ssh-tarpit:local
+```
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📝 License
+
+MIT License - feel free to use this in your projects!
+
+## 💰 Support the Project
+
+- [![Patreon](https://img.shields.io/badge/Donate-Patreon-orange.svg)](https://www.patreon.com/AndreasKasper)
+- [![PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://www.paypal.me/AndreasKasper)
+
+## ⚠️ Disclaimer
+
+This is a defensive security tool. Use it responsibly and only on systems you own or have permission to protect. The maintainers are not responsible for any misuse.
+
+---
+
+**Made with ❤️ by [Andreas Kasper](https://github.com/andreaskasper)**
