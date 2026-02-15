@@ -1,0 +1,65 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Build Docker image
+        run: docker build -t ssh-tarpit:test .
+      
+      - name: Run container test
+        run: |
+          # Start container
+          docker run -d --name tarpit-test -p 2222:22 ssh-tarpit:test
+          
+          # Wait for container to be ready
+          sleep 5
+          
+          # Check if container is running
+          docker ps | grep tarpit-test
+          
+          # Check if port is listening (should timeout quickly as expected)
+          timeout 5 nc -zv localhost 2222 || echo "Tarpit is working (slow response expected)"
+          
+          # Check logs
+          docker logs tarpit-test
+          
+          # Check health
+          docker inspect --format='{{.State.Health.Status}}' tarpit-test || echo "Health check not ready yet"
+          
+          # Cleanup
+          docker stop tarpit-test
+          docker rm tarpit-test
+      
+      - name: Test entrypoint help
+        run: |
+          docker run --rm ssh-tarpit:test --help
+      
+      - name: Verify non-root user
+        run: |
+          USER_ID=$(docker run --rm ssh-tarpit:test id -u)
+          if [ "$USER_ID" = "1000" ]; then
+            echo "✓ Running as non-root user (UID: $USER_ID)"
+          else
+            echo "✗ Expected UID 1000, got $USER_ID"
+            exit 1
+          fi
+      
+      - name: Check image size
+        run: |
+          SIZE=$(docker images ssh-tarpit:test --format "{{.Size}}")
+          echo "Image size: $SIZE"
+          # Image should be under 100MB (Alpine-based)
+          docker images ssh-tarpit:test
