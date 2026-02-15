@@ -1,5 +1,5 @@
 # Multi-stage build for minimal image size
-FROM python:3.12-alpine AS builder
+FROM python:3.14-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache \
@@ -11,7 +11,7 @@ RUN apk add --no-cache \
 RUN pip3 install --no-cache-dir --user ssh-tarpit
 
 # Final stage - minimal runtime image
-FROM python:3.12-alpine
+FROM python:3.14-alpine
 
 LABEL maintainer="Andreas Kasper <andreas.kasper@goo1.de>" \
       description="SSH Tarpit - Slow down SSH brute force attacks" \
